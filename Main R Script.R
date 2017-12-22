@@ -42,5 +42,7 @@ plot(mycpm[,1],counts[,1],ylim=c(0,2),xlim=c(0,3))
 # Add a vertical line at 0.5 CPM
 abline(v=0.5)
 abline(v=0.5)
+Testing git line
+
 j
 
