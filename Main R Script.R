@@ -19,7 +19,7 @@ table(patientData$Tissue)
 # latter does not account for differences in library sizes between samples
 # Need to READ combine-australia general tutorial for info on how CPM filtering works
 # Recall we’re looking for a CPM that corresponds to a count of roughly 10-15.
-mycpm <- cpm(counts)
+mycpm <- cpm(counts) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
 plot(counts[,1],mycpm[,1],xlim=c(0,20),ylim=c(0,50))
 abline(v=10,col=2)
 abline(h=2,col=4)
