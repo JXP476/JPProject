@@ -90,17 +90,13 @@ plotMDS(y)
 
 # to make plot more informative; colour samples according to grouping info
 plotMDS(y,col=col.cell)
-n <-c("PT45", "PT44", "PT42")
-Tissue <-c("Tumour", "Tumour", "Tumour")
-col.cell <- c("purple","orange", "purple")
 data.frame(sampleID,Tissue,col.cell)
-legend("topleft",fill=c("purple","orange"),legend=levels(sampleID$Tissue))
-levels(sampleID$Tissue)
+sampleID <-c("P4T5", "P4T7", "P3T1", "P3T3", "P3T5", "P3T7", "P4N1", "P4N2", "P4T1", "P4T3", "P1T2", "P1T6", "P5N2", "P5T2", "" )
 
 #CURRENTLY CANT GET MDS TO WORK WITH COLOURED LABELS BUT ATTEMPTING TO FIX AGAINST TUTORIAL http://combine-australia.github.io/RNAseq-R/06-rnaseq-day1.html
 
 # ** 5) Hierarchical clustering with heatmap **
-
+sam
 # First we need a matrix of log counts:
 
 logcounts <- cpm(y,log=TRUE)
