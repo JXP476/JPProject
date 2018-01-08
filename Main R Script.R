@@ -125,6 +125,7 @@ morecols <- colorRampPalette(mypalette)
 heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=group.col,scale="row",margins=c(10,5))
 y <- calcNormFactors(y)
 y$samples
+# THESE SHOW biased and unbiased MD plots side by side for the same sample to see the before and after TMM normalisation effect.
 # P4T7
 par(mfrow=c(1,2))
 plotMD(logcounts,column=2)
