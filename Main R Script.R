@@ -56,34 +56,45 @@ abline(v=0.5)
 
 # ** 3) CONVERT TO DGE LIST OBJECT ** 
 # DGEList object holds the dataset to be analysed by edgeR and the subsequent calculations performed on the dataset
+# Since the DGElist should contain : lib.size, norm.factors, group, genes
 y <- DGEList(counts.keep) 
-
-#^ Since the DGElist should contain : lib.size, norm.factors, group, genes
+y
+names(y)
+y$samples
 
 
 # ** 4) QUALITY CONTROL **
-# Here conduct a number of quality QC plots. 1st, check the library sizes:
-barplot(y$samples$lib.size)
+# Now that we have got rid of the lowly expressed genes and have our counts stored in a DGEList object
+# Look at plots to check that the data is good quality, and that the samples are as we would expect.
+# Here conduct a number of quality QC plots
+
+# 1st- Library sizes and distribution plots
+y$samples$lib.size
+barplot(y$samples$lib.size,names=colnames(y),las=2)
+title("Barplot of library sizes")
+# Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts
 # Next check the distribution of the counts using a boxplot:
-par(mfrow=c(1,1))
 # Get log2 counts per million- can use the cpm function to get log2 counts per million, which are corrected for the different library sizes. The cpm function also adds a small offset to avoid taking log of zero.
 logcpm <- cpm(y$counts,log=TRUE)
 # Check distributions of samples using boxplots
-boxplot(logcpm, xlab="", ylab="Log2 counts per million",las=2,outline=FALSE)
+boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
 # Let's add a blue horizontal line that corresponds to the median logCPM
 abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 
-# We can colour by our groups:
+# - COLOURED BY GROUPS:
 par(mfrow=c(1,2),oma=c(2,0,0,0))
-group.col <- c("red","blue")[targets$Tissue]
-# ^ shouldn't this colour the tumour and normal patients in red/blue accordingly?
+group.col <- c("red","blue")[patientData$Tissue]
 boxplot(logcpm, xlab="", ylab="Log2 counts per million",las=2,col=group.col,
         pars=list(cex.lab=0.8,cex.axis=0.8))
 abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs\n(coloured by groups)",cex.main=0.8)
 
 # Any BIAS in data? P8N1 needs investigating further- looks completely diff
+
+# 2nd- Multidimensional scaling plots
+
+
 
 # Now check our MDS plots.
 plotMDS(y)
