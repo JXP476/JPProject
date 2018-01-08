@@ -112,5 +112,37 @@ sam
 
 logcounts <- cpm(y,log=TRUE)
 
+# Hierarchical clustering with heatmap.2
 
+logcounts <- cpm(y,log=TRUE)
+var_genes <- apply(logcounts, 1, var)
+select_var <- names(sort(var_genes, decreasing=TRUE))[1:500]
+highly_variable_lcpm <- logcounts[select_var,]
+dim(highly_variable_lcpm)
+mypalette <- brewer.pal(11,"RdYlBu")
+morecols <- colorRampPalette(mypalette)
+# Plot the heatmap
+heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=group.col,scale="row",margins=c(10,5))
+y <- calcNormFactors(y)
+y$samples
+# P4T7
+par(mfrow=c(1,2))
+plotMD(logcounts,column=2)
+abline(h=0,col="grey")
+plotMD(y,column = 2)
+abline(h=0,col="grey")
+
+# P3T3
+par(mfrow=c(1,2))
+plotMD(logcounts,column=4)
+abline(h=0,col="grey")
+plotMD(y,column = 2)
+abline(h=0,col="grey")
+
+# P4N1
+par(mfrow=c(1,2))
+plotMD(logcounts,column=7)
+abline(h=0,col="grey")
+plotMD(y,column = 2)
+abline(h=0,col="grey")
 
