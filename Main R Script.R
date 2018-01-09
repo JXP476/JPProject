@@ -32,13 +32,19 @@ table(patientData$Tissue)
 # Need to READ combine-australia general tutorial for info on how CPM filtering works
 # Recall we’re looking for a CPM that corresponds to a count of roughly 10-15.
 mycpm <- (geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
+head(mycpm)
 plot(counts[,1],mycpm[,1],xlim=c(0,20),ylim=c(0,50))
 abline(v=10,col=2)
 abline(h=2,col=4)
 #^ looks at count data
-# Which values in myCPM are greater than 0.5? (0.5 is CPM threshold)
+# Which values in myCPM are greater than 0.5? (if 0.5 is CPM threshold)
+# changed CPM to 10 and managed to get a count of 10. Realised abline was the issue for not showing counts correctly
 thresh <- mycpm > 0.5
+head(thresh)
+# Summary of how many TRUEs there are in each row:
 table(rowSums(thresh))
+# There are X genes that have TRUEs in all 27 samples (TSPAN6, SCYL3, C1orf112)
+
 # we would like to keep genes that have at least 2 TRUES in each row of thresh
 keep <- rowSums(thresh) >= 7
 table(keep)
@@ -49,9 +55,9 @@ dim(counts.keep)
 # See whether threshold of 0.5 corresponds to a count of about 10-15 (it doesn't)
 plot(mycpm[,1],counts[,1])
 # Limit the x and y-axis to see what is happening at the smaller counts
-plot(mycpm[,1],counts[,1],ylim=c(0,2),xlim=c(0,3))
+plot(mycpm[,1],counts[,1],ylim=c(0,20),xlim=c(0,20))
 # Add a vertical line at 0.5 CPM
-abline(v=0.5)
+abline(v=10)
 
 
 # ** 3) CONVERT TO DGE LIST OBJECT ** 
@@ -118,7 +124,8 @@ highly_variable_lcpm <- logcounts[select_var,]
 dim(highly_variable_lcpm)
 mypalette <- brewer.pal(11,"RdYlBu")
 morecols <- colorRampPalette(mypalette)
-# Plot the heatmap
+
+# Plot the heatmap- Normalisation
 heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=group.col,scale="row",margins=c(10,5))
 y <- calcNormFactors(y)
 y$samples
