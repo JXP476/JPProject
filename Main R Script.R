@@ -73,6 +73,7 @@ y$samples$lib.size
 barplot(y$samples$lib.size,names=colnames(y),las=2)
 title("Barplot of library sizes")
 # Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts
+
 # Next check the distribution of the counts using a boxplot:
 # Get log2 counts per million- can use the cpm function to get log2 counts per million, which are corrected for the different library sizes. The cpm function also adds a small offset to avoid taking log of zero.
 logcpm <- cpm(y$counts,log=TRUE)
@@ -83,7 +84,6 @@ abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 
 # - COLOURED BY GROUPS:
-par(mfrow=c(1,2),oma=c(2,0,0,0))
 group.col <- c("red","blue")[patientData$Tissue]
 boxplot(logcpm, xlab="", ylab="Log2 counts per million",las=2,col=group.col,
         pars=list(cex.lab=0.8,cex.axis=0.8))
@@ -94,9 +94,6 @@ title("Boxplots of logCPMs\n(coloured by groups)",cex.main=0.8)
 
 # 2nd- Multidimensional scaling plots
 
-
-
-# Now check our MDS plots.
 plotMDS(y)
 
 # to make plot more informative; colour samples according to grouping info
