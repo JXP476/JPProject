@@ -1,4 +1,3 @@
-# ** 1) READING DATA INTO R **
 install.packages("limma")
 source("https://bioconductor.org/biocLite.R")
 biocLite("limma")
@@ -8,6 +7,7 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("edgeR")
 library(edgeR)
 #NOT SURE IF GPLOTS ACTUALLY INSTALLED**
+install.packages("gplots")
 library(gplots)
 install.packages("RColorBrewer")
 library(RColorBrewer)
@@ -15,52 +15,28 @@ install.packages("org.Dm.eg.db")
 library(org.Dm.eg.db)
 
 
-# Initial quality control & data preparation:
-# ** 2) FILTERING OUT LOWLY EXPRESSED GENES **
-# (In test = TREATED VS UNTREATED. In mine = 1. TUMOUR VS NORMAL 2. T VS N in EACH PATIENT
-# 1st interest is testing TUMOUR VS NORMAL groups
-# To check how many samples we have each group= use the table command
-counts <- geneExpressionCPM
+
+# FILTERING OUT LOWLY EXPRESSED GENES
+  
+counts <- geneExpressionCounts
 targets <- patientData$Patient
-# I think the above assignment step is irrelevant but have left in for now^
+
 table(patientData$Tissue)
-# ^ Normal-7, Tumour-20
-# So the minimum sample size is 7
-# Check the relationship between CPM and counts to see what CPM threshold we should be imposing
-# Users should filter with CPMs rather than filtering on the counts directly
-# latter does not account for differences in library sizes between samples
-# Need to READ combine-australia general tutorial for info on how CPM filtering works
-# Recall we’re looking for a CPM that corresponds to a count of roughly 10-15.
+
 mycpm <- (geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
 head(mycpm)
-plot(counts[,1],mycpm[,1],xlim=c(0,20),ylim=c(0,50))
-abline(v=10,col=2)
-abline(h=2,col=4)
-#^ looks at count data
-# Which values in myCPM are greater than 0.5? (if 0.5 is CPM threshold)
-# changed CPM to 10 and managed to get a count of 10. Realised abline was the issue for not showing counts correctly
-thresh <- mycpm > 0.5
+thresh <- mycpm > 1
 head(thresh)
-# Summary of how many TRUEs there are in each row:
 table(rowSums(thresh))
-# There are X genes that have TRUEs in all 27 samples (TSPAN6, SCYL3, C1orf112)
 
-# we would like to keep genes that have at least 2 TRUES in each row of thresh
 keep <- rowSums(thresh) >= 7
 table(keep)
-# Subset the rows of countdata to keep the more highly expressed genes
 counts.keep <- counts[keep,]
 dim(counts.keep)
-# = Filtering out 23869 out of total 39381?
-# See whether threshold of 0.5 corresponds to a count of about 10-15 (it doesn't)
+
 plot(mycpm[,1],counts[,1])
-# Limit the x and y-axis to see what is happening at the smaller counts
-plot(mycpm[,1],counts[,1],ylim=c(0,20),xlim=c(0,20))
-# Add a vertical line at 0.5 CPM
-abline(v=10)
 
-
-# ** 3) CONVERT TO DGE LIST OBJECT ** 
+# CONVERT TO DGE LIST OBJECT 
 # DGEList object holds the dataset to be analysed by edgeR and the subsequent calculations performed on the dataset
 # Since the DGElist should contain : lib.size, norm.factors, group, genes
 y <- DGEList(counts.keep) 
@@ -151,3 +127,16 @@ abline(h=0,col="grey")
 plotMD(y,column = 2)
 abline(h=0,col="grey")
 
+# Differential expression
+#Set up design matrix
+# We want to test for differences between the treated and untreated samples. However, we know that the library preparation adds variability to the data, so we need to account for it in our model. We do this by modelling both Group and Library as variables in our design matrix. This is known as an additive model.
+design <- model.matrix(~patientData$Patient + patientData$Tissue)
+design
+colnames(design) <- c("Int","SEvsPE","UVsT")
+par(mfrow=c(1,1))
+v <- voom(y,design,plot=TRUE)
+par(mfrow=c(1,2))
+boxplot(logcounts)
+abline(h=median(logcounts),col=4)
+boxplot(v$E)
+abline(h=median(v$E),col=4)
