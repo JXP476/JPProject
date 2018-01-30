@@ -18,14 +18,15 @@ library(org.Dm.eg.db)
 
 # FILTERING OUT LOWLY EXPRESSED GENES
   
-counts <- geneExpressionCounts
-targets <- patientData$Patient
+counts <- geneExpressionCPM
+targets <- patientData
 
 table(patientData$Tissue)
 
-mycpm <- (geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
+mycpm <- cpm(geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
+# Why isn't it on counts? don't understand why apply cpm function if already CPM?
 head(mycpm)
-thresh <- mycpm > 1
+thresh <- mycpm > 0.5
 head(thresh)
 table(rowSums(thresh))
 
@@ -34,34 +35,29 @@ table(keep)
 counts.keep <- counts[keep,]
 dim(counts.keep)
 
-plot(mycpm[,1],counts[,1])
+
+
+plot(counts[,1],mycpm[,1],xlim=c(0,15),ylim=c(0,5))
+abline(v=10, col=2)
+
 
 # CONVERT TO DGE LIST OBJECT 
-# DGEList object holds the dataset to be analysed by edgeR and the subsequent calculations performed on the dataset
-# Since the DGElist should contain : lib.size, norm.factors, group, genes
-y <- DGEList(counts.keep) 
+
+y <- DGEList(counts.keep)
 y
 names(y)
 y$samples
+dim(y)
+## ASK: Doesnt there need to be group 1 & group 2 (tumour vs normal)
 
+# Library sizes and distribution plots
 
-# ** 4) QUALITY CONTROL **
-# Now that we have got rid of the lowly expressed genes and have our counts stored in a DGEList object
-# Look at plots to check that the data is good quality, and that the samples are as we would expect.
-# Here conduct a number of quality QC plots
-
-# 1st- Library sizes and distribution plots
 y$samples$lib.size
 barplot(y$samples$lib.size,names=colnames(y),las=2)
 title("Barplot of library sizes")
-# Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts
 
-# Next check the distribution of the counts using a boxplot:
-# Get log2 counts per million- can use the cpm function to get log2 counts per million, which are corrected for the different library sizes. The cpm function also adds a small offset to avoid taking log of zero.
 logcpm <- cpm(y$counts,log=TRUE)
-# Check distributions of samples using boxplots
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
-# Let's add a blue horizontal line that corresponds to the median logCPM
 abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 
@@ -72,21 +68,14 @@ boxplot(logcpm, xlab="", ylab="Log2 counts per million",las=2,col=group.col,
 abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs\n(coloured by groups)",cex.main=0.8)
 
-# Any BIAS in data? P8N1 needs investigating further- looks completely diff
-
-# 2nd- Multidimensional scaling plots
+# Multidimensional scaling plots
 
 plotMDS(y)
 
 # to make plot more informative; colour samples according to grouping info
-plotMDS(y,col=col.cell)
-data.frame(sampleID,Tissue,col.cell)
-sampleID <-c("P4T5", "P4T7", "P3T1", "P3T3", "P3T5", "P3T7", "P4N1", "P4N2", "P4T1", "P4T3", "P1T2", "P1T6", "P5N2", "P5T2", "" )
 
-#CURRENTLY CANT GET MDS TO WORK WITH COLOURED LABELS BUT ATTEMPTING TO FIX AGAINST TUTORIAL http://combine-australia.github.io/RNAseq-R/06-rnaseq-day1.html
 
-# ** 5) Hierarchical clustering with heatmap **
-sam
+
 # First we need a matrix of log counts:
 
 logcounts <- cpm(y,log=TRUE)
