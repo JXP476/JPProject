@@ -24,7 +24,8 @@ targets <- patientData
 table(patientData$Tissue)
 
 mycpm <- cpm(geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
-# Why isn't it on counts? don't understand why apply cpm function if already CPM?
+# Why isn't it on counts? 
+# don't understand why apply cpm function if already CPM?
 head(mycpm)
 thresh <- mycpm > 0.5
 head(thresh)
@@ -53,32 +54,25 @@ dim(y)
 # Library sizes and distribution plots
 
 y$samples$lib.size
+
 barplot(y$samples$lib.size,names=colnames(y),las=2)
 title("Barplot of library sizes")
+
+# logcpm
 
 logcpm <- cpm(y$counts,log=TRUE)
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
 abline(h=median(logcpm),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 
-# - COLOURED BY GROUPS:
-group.col <- c("red","blue")[patientData$Tissue]
-boxplot(logcpm, xlab="", ylab="Log2 counts per million",las=2,col=group.col,
-        pars=list(cex.lab=0.8,cex.axis=0.8))
-abline(h=median(logcpm),col="blue")
-title("Boxplots of logCPMs\n(coloured by groups)",cex.main=0.8)
-
 # Multidimensional scaling plots
 
 plotMDS(y)
-
-# to make plot more informative; colour samples according to grouping info
-
-
-
-# First we need a matrix of log counts:
-
-logcounts <- cpm(y,log=TRUE)
+col.cell <- c("purple","purple", "purple","purple","purple","purple","orange","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","orange","orange")
+data.frame(patientData$Tissue,col.cell)
+plotMDS(y,col=col.cell)
+legend("topleft",fill=c("purple","orange"),legend=levels(patientData$Tissue))
+title("Cell type")
 
 # Hierarchical clustering with heatmap.2
 
@@ -86,12 +80,22 @@ logcounts <- cpm(y,log=TRUE)
 var_genes <- apply(logcounts, 1, var)
 select_var <- names(sort(var_genes, decreasing=TRUE))[1:500]
 highly_variable_lcpm <- logcounts[select_var,]
+head(highly_variable_lcpm)
 dim(highly_variable_lcpm)
+
 mypalette <- brewer.pal(11,"RdYlBu")
 morecols <- colorRampPalette(mypalette)
+col.cell <- c("purple","purple", "purple","purple","purple","purple","orange","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","orange","orange")
+data.frame(patientData$Tissue,col.cell)
 
-# Plot the heatmap- Normalisation
-heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=group.col,scale="row",margins=c(10,5))
+
+# Plot the heatmap
+heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=col.cell,scale="row")
+
+
+
+
+
 y <- calcNormFactors(y)
 y$samples
 # THESE SHOW biased and unbiased MD plots side by side for the same sample to see the before and after TMM normalisation effect.
