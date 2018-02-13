@@ -119,9 +119,9 @@ plotMD(y,column = 2)
 abline(h=0,col="grey")
 
 # Differential expression
-design <- model.matrix(~0 + targets$Tissue)
+design <- model.matrix(targets$Tissue)
 design
-colnames(design) <- c("Int","Normal","Tumour")
+colnames(design) <- c("Normal","Tumour")
 par(mfrow=c(1,1))
 v <- voom(y,design,plot=TRUE)
 par(mfrow=c(1,2))
@@ -133,4 +133,19 @@ fit <- lmFit(v,design)
 fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
+
 topTable(fit,coef=3,sort.by="p")
+topTable(fit.cont,coef="Tumour vs Normal",sort.by="p")
+# I dont understand whether to use 136/137 in mine?
+
+cont.matrix <- makeContrasts(B.TumourNormal=Tumour - Normal,levels=design)
+cont.matrix
+fit.cont <- contrasts.fit(fit, cont.matrix)
+fit.cont <- eBayes(fit.cont)
+dim(fit.cont)
+summa.fit <- decideTests(fit.cont)
+summary(summa.fit)
+topTable(fit.cont,coef="B.TumourNormal",sort.by="p")
+columns(org.Mm.eg.db)
+
+vennDiagram # ***** need to figure out how to create this- good figure
