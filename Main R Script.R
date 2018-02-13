@@ -18,14 +18,12 @@ library(org.Dm.eg.db)
 
 # FILTERING OUT LOWLY EXPRESSED GENES
   
-counts <- geneExpressionCPM
+counts <- geneExpressionCounts
 targets <- patientData
 
 table(patientData$Tissue)
 
-mycpm <- cpm(geneExpressionCPM) # CY (22/12/2017): I SUSPECT THIS IS THE PROBLEM. YOU ARE APPLYING THE CPM FUNCTION TO THE COUNTS MATRIX. THIS FUNCTION DOES NOT APPLY HERE. THERE SHOULD BE ANOTHER MATRIX OF CPM VALUES (geneExpressionCPM?).
-# Why isn't it on counts? 
-# don't understand why apply cpm function if already CPM?
+mycpm <- geneExpressionCPM 
 head(mycpm)
 thresh <- mycpm > 0.5
 head(thresh)
@@ -121,11 +119,9 @@ plotMD(y,column = 2)
 abline(h=0,col="grey")
 
 # Differential expression
-#Set up design matrix
-# We want to test for differences between the treated and untreated samples. However, we know that the library preparation adds variability to the data, so we need to account for it in our model. We do this by modelling both Group and Library as variables in our design matrix. This is known as an additive model.
-design <- model.matrix(~patientData$Patient + patientData$Tissue)
+design <- model.matrix(~0 + targets$Tissue)
 design
-colnames(design) <- c("Int","SEvsPE","UVsT")
+colnames(design) <- c("Int","Normal","Tumour")
 par(mfrow=c(1,1))
 v <- voom(y,design,plot=TRUE)
 par(mfrow=c(1,2))
@@ -138,4 +134,3 @@ fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
 topTable(fit,coef=3,sort.by="p")
-columns(org.Dm.eg.db)
