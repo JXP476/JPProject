@@ -119,7 +119,11 @@ plotMD(y,column = 2)
 abline(h=0,col="grey")
 
 # Differential expression
-design <- model.matrix(targets$Tissue)
+
+# include the Patient + tissue as variables
+# You are testing for differences between normal and tumour tissues whilst accounting for any systematic inter-patient differences
+
+design <- model.matrix(~targets$SampleID + targets$Tissue)
 design
 colnames(design) <- c("Normal","Tumour")
 par(mfrow=c(1,1))
