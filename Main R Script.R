@@ -11,9 +11,12 @@ install.packages("gplots")
 library(gplots)
 install.packages("RColorBrewer")
 library(RColorBrewer)
-install.packages("org.Dm.eg.db")
-library(org.Dm.eg.db)
+install.packages("org.hs.eg.db")
+source("https://bioconductor.org/biocLite.R")
+biocLite("org.Hs.eg.db")
+library(org.Hs.eg.db)
 
+# Note: USE CAPITAL H in Hs
 
 
 # FILTERING OUT LOWLY EXPRESSED GENES
@@ -123,9 +126,12 @@ abline(h=0,col="grey")
 # include the Patient + tissue as variables
 # You are testing for differences between normal and tumour tissues whilst accounting for any systematic inter-patient differences
 
-design <- model.matrix(~targets$SampleID + targets$Tissue)
+# SET UP DESIGN MATRIX
+design <- model.matrix(~targets$Patient + targets$Tissue)
 design
-colnames(design) <- c("Normal","Tumour")
+colnames(design) <- c("Intercept", "Patient","Tumour/Normal")
+
+# Voom transform the data
 par(mfrow=c(1,1))
 v <- voom(y,design,plot=TRUE)
 par(mfrow=c(1,2))
@@ -133,23 +139,24 @@ boxplot(logcounts)
 abline(h=median(logcounts),col=4)
 boxplot(v$E)
 abline(h=median(v$E),col=4)
+
+
+# Test for differential expression
 fit <- lmFit(v,design)
 fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
 
 topTable(fit,coef=3,sort.by="p")
-topTable(fit.cont,coef="Tumour vs Normal",sort.by="p")
-# I dont understand whether to use 136/137 in mine?
 
-cont.matrix <- makeContrasts(B.TumourNormal=Tumour - Normal,levels=design)
-cont.matrix
-fit.cont <- contrasts.fit(fit, cont.matrix)
-fit.cont <- eBayes(fit.cont)
-dim(fit.cont)
-summa.fit <- decideTests(fit.cont)
-summary(summa.fit)
-topTable(fit.cont,coef="B.TumourNormal",sort.by="p")
-columns(org.Mm.eg.db)
+# Add annotation from org.hs.eg.db (human samples)
+
+columns(org.Hs.eg.db)
+
+
+
+
+
+
 
 vennDiagram # ***** need to figure out how to create this- good figure
