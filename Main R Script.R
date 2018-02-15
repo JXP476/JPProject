@@ -16,6 +16,10 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("org.Hs.eg.db")
 library(org.Hs.eg.db)
 
+install.packages("ENSEMBL")
+
+library(ENSEMBL)
+
 # Note: USE CAPITAL H in Hs
 
 
@@ -152,11 +156,13 @@ topTable(fit,coef=3,sort.by="p")
 # Add annotation from org.hs.eg.db (human samples)
 
 columns(org.Hs.eg.db)
+keytypes(org.Hs.eg.db)
 
+ann <- select(org.Hs.eg.db,keys=rownames(fit),columns=c("ENSEMBL","ENTREZID", "SYMBOL","GENENAME"),keytype="ENSEMBL")
 
+head(ann)
 
-
-
+# trying to annotate at the moment but getting "  None of the keys entered are valid keys for 'ENSEMBL'. Please use the keys method to see a listing of valid arguments"
 
 
 vennDiagram # ***** need to figure out how to create this- good figure
