@@ -158,9 +158,11 @@ topTable(fit,coef=3,sort.by="p")
 columns(org.Hs.eg.db)
 keytypes(org.Hs.eg.db)
 
-ann <- select(org.Hs.eg.db,keys=rownames(fit),columns=c("ENSEMBL","ENTREZID", "SYMBOL","GENENAME"),keytype="ENSEMBL")
+ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENSEMBL", "ENTREZID","SYMBOL","GENENAME"), keytype="ENSEMBL")
 
 head(ann)
+
+columns(edb)
 
 # trying to annotate at the moment but getting "  None of the keys entered are valid keys for 'ENSEMBL'. Please use the keys method to see a listing of valid arguments"
 
