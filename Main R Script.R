@@ -157,8 +157,15 @@ topTable(fit,coef=3,sort.by="p")
 
 columns(org.Hs.eg.db)
 keytypes(org.Hs.eg.db)
+head(keys(org.Hs.eg.db))
 
-ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENSEMBL", "ENTREZID","SYMBOL","GENENAME"), keytype="ENSEMBL")
+my_keys <- head(keys(org.Hs.eg.db))
+
+ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"), keytype="ENTREZID")
+
+ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"))
+
+ann <- select(org.Hs.eg.db, keys = my_keys,columns=c("ENTREZID","SYMBOL","GENENAME"),keytype="ENTREZID")
 
 head(ann)
 
