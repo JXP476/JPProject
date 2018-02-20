@@ -16,13 +16,6 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("org.Hs.eg.db")
 library(org.Hs.eg.db)
 
-install.packages("ENSEMBL")
-
-library(ENSEMBL)
-
-# Note: USE CAPITAL H in Hs
-
-
 # FILTERING OUT LOWLY EXPRESSED GENES
   
 counts <- geneExpressionCounts
@@ -151,27 +144,19 @@ fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
 
-topTable(fit,coef=3,sort.by="p")
+topTable(fit.cont,coef=1,sort.by="p")
 
-# Add annotation from org.hs.eg.db (human samples)
+# Adding annotation and saving the results - Add annotation from org.hs.eg.db (human samples)
 
 columns(org.Hs.eg.db)
 keytypes(org.Hs.eg.db)
-head(keys(org.Hs.eg.db))
 
-my_keys <- head(keys(org.Hs.eg.db))
+my_keys <- (keys(org.Hs.eg.db))
+my_keys
 
-ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"), keytype="ENTREZID")
+ann <- select(org.Hs.eg.db, keys = geneExpressionCPM$rows,columns=c("ENTREZID","SYMBOL","GENENAME"),keytype="ENTREZID")
 
-ann <- select(org.Hs.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"))
-
-ann <- select(org.Hs.eg.db, keys = my_keys,columns=c("ENTREZID","SYMBOL","GENENAME"),keytype="ENTREZID")
-
-head(ann)
-
-columns(edb)
-
-# trying to annotate at the moment but getting "  None of the keys entered are valid keys for 'ENSEMBL'. Please use the keys method to see a listing of valid arguments"
-
+fit$genes <- ann
+topTable(fit.cont,coef=1,sort.by="p")
 
 vennDiagram # ***** need to figure out how to create this- good figure
