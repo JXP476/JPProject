@@ -6,7 +6,6 @@ install.packages("edgeR")
 source("https://bioconductor.org/biocLite.R")
 biocLite("edgeR")
 library(edgeR)
-#NOT SURE IF GPLOTS ACTUALLY INSTALLED**
 install.packages("gplots")
 library(gplots)
 install.packages("RColorBrewer")
@@ -15,6 +14,13 @@ install.packages("org.hs.eg.db")
 source("https://bioconductor.org/biocLite.R")
 biocLite("org.Hs.eg.db")
 library(org.Hs.eg.db)
+
+"load({Main R Script})"
+
+rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCounts))
+rownames(geneExpressionCPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCPM))
+rownames(geneExpressionTPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionTPM))
+
 
 # FILTERING OUT LOWLY EXPRESSED GENES
   
@@ -31,23 +37,17 @@ table(rowSums(thresh))
 
 keep <- rowSums(thresh) >= 7
 table(keep)
-counts.keep <- counts[keep,]
+counts.keep <- geneExpressionCPM[keep,]
 dim(counts.keep)
 
-
-
-plot(counts[,1],mycpm[,1],xlim=c(0,15),ylim=c(0,5))
-abline(v=10, col=2)
-
-
-# CONVERT TO DGE LIST OBJECT 
+# Normalisation for composition bias
 
 y <- DGEList(counts.keep)
+y <- calcNormFactors(y)
 y
-names(y)
 y$samples
 dim(y)
-## ASK: Doesnt there need to be group 1 & group 2 (tumour vs normal)
+
 
 # Library sizes and distribution plots
 
@@ -61,7 +61,7 @@ title("Barplot of library sizes")
 logcpm <- cpm(y$counts,log=TRUE)
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
 abline(h=median(logcpm),col="blue")
-title("Boxplots of logCPMs (unnormalised)")
+title("Boxplots of logCPMs (normalised)")
 
 # Multidimensional scaling plots
 
@@ -91,11 +91,6 @@ data.frame(patientData$Tissue,col.cell)
 heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=col.cell,scale="row")
 
 
-
-
-
-y <- calcNormFactors(y)
-y$samples
 # THESE SHOW biased and unbiased MD plots side by side for the same sample to see the before and after TMM normalisation effect.
 # P4T7
 par(mfrow=c(1,2))
@@ -144,12 +139,7 @@ fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
 
-dim(fit.cont)
-
-summa.fit <- decideTests(fit.cont)
-summary(summa.fit)
-
-topTable(fit.cont,coef=1,sort.by="p")
+topTable(fit,coef=3,sort.by="p")
 
 # Adding annotation and saving the results - Add annotation from org.hs.eg.db (human samples)
 
@@ -162,6 +152,8 @@ keytypes(org.Hs.eg.db)
 # This will replace the row names of the geneExpressionXXX matrix by the ensembl ID only:
 
 rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCounts))
+rownames(geneExpressionCPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCPM))
+rownames(geneExpressionTPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionTPM))
 
 # This code then matches on the new row names:
 # You can then filter based on Ensembl Gene IDs:
@@ -169,7 +161,51 @@ rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpression
 ann = select(org.Hs.eg.db, keys = rownames(geneExpressionCounts),columns=c("ENSEMBL", "SYMBOL","GENENAME"),keytype="ENSEMBL")
 
 head(ann)
-
 ann
+
+table(ann$ENSEMBL==rownames(fit))
+fit$genes <- ann
+topTable(fit,coef=3,sort.by="p")
+
+# Alternative but didn't work:
+
+ls("package:org.Hs.eg.db")
+
+j <- toTable(org.Hs.egENSEMBL)
+head(j)
+
+symbol <- toTable(org.Hs.egSYMBOL)
+genename <- toTable(org.Hs.egGENENAME)
+
+ann1 <- merge(j,symbol,by="gene_id")
+head(ann1)
+
+ann2 <- merge(ann1,genename,by="gene_id")
+head(ann2)
+
+m <- match(rownames(fit),ann2$ensembl_id)
+table(is.na(m)) 
+
+ann3 <- ann2[m[!is.na(m)],]
+head(ann3)
+head(fit$genes)
+
+topTable(fit,coef=3,sort.by="p")
+
+# Checking expression of tetraspanin 6
+
+ps <- grep("tetraspanin 6",fit$genes$GENENAME)
+topTable(fit[ps,],coef=3)
+
+# PLOTS:
+
+par(mfrow=c(1,2))
+
+plotMD(fit,coef=3,status=results[,"Tumour/Normal"])
+
+volcanoplot(fit,coef=3,highlight=100,names=fit$genes$SYMBOL)
+
+
+
 
 vennDiagram # ***** need to figure out how to create this- good figure
