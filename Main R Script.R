@@ -144,6 +144,11 @@ fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
 
+dim(fit.cont)
+
+summa.fit <- decideTests(fit.cont)
+summary(summa.fit)
+
 topTable(fit.cont,coef=1,sort.by="p")
 
 # Adding annotation and saving the results - Add annotation from org.hs.eg.db (human samples)
@@ -151,12 +156,20 @@ topTable(fit.cont,coef=1,sort.by="p")
 columns(org.Hs.eg.db)
 keytypes(org.Hs.eg.db)
 
-my_keys <- (keys(org.Hs.eg.db))
-my_keys
 
-ann <- select(org.Hs.eg.db, keys = geneExpressionCPM$rows,columns=c("ENTREZID","SYMBOL","GENENAME"),keytype="ENTREZID")
+# At the moment the row names are a concatenation of its HUGO Gene Symbol and Ensembl ID.
+# THIS BIT OF CODE FOLLOWING TURNS ROW NAMES TO JUST Ensembl IDs
+# This will replace the row names of the geneExpressionXXX matrix by the ensembl ID only:
 
-fit$genes <- ann
-topTable(fit.cont,coef=1,sort.by="p")
+rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCounts))
+
+# This code then matches on the new row names:
+# You can then filter based on Ensembl Gene IDs:
+
+ann = select(org.Hs.eg.db, keys = rownames(geneExpressionCounts),columns=c("ENSEMBL", "SYMBOL","GENENAME"),keytype="ENSEMBL")
+
+head(ann)
+
+ann
 
 vennDiagram # ***** need to figure out how to create this- good figure
