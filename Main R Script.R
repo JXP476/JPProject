@@ -158,7 +158,7 @@ rownames(geneExpressionTPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionTPM
 # This code then matches on the new row names:
 # You can then filter based on Ensembl Gene IDs:
 
-ann = select(org.Hs.eg.db, keys = rownames(geneExpressionCounts),columns=c("ENSEMBL", "SYMBOL","GENENAME"),keytype="ENSEMBL")
+ann = select(org.Hs.eg.db, keys = rownames(fit),columns=c("ENSEMBL", "SYMBOL","GENENAME"),keytype="ENSEMBL")
 
 head(ann)
 ann
@@ -196,6 +196,12 @@ topTable(fit,coef=3,sort.by="p")
 
 ps <- grep("tetraspanin 6",fit$genes$GENENAME)
 topTable(fit[ps,],coef=3)
+
+out = sort(fit$p.value[, 3], decreasing=FALSE, index.return=TRUE)
+
+fitSorted = fit
+fitSorted$p.value = fit$p.value[out$ix, ]
+fitSorted$genes = fit$genes[out$ix, ]
 
 # PLOTS:
 
