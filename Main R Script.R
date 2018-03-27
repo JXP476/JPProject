@@ -10,10 +10,11 @@ install.packages("gplots")
 library(gplots)
 install.packages("RColorBrewer")
 library(RColorBrewer)
-install.packages("org.hs.eg.db")
-source("https://bioconductor.org/biocLite.R")
-biocLite("org.Hs.eg.db")
-library(org.Hs.eg.db)
+source("http://bioconductor.org/biocLite.R")
+biocLite("GO.db")
+#load library
+library(GO.db)
+
 
 "load({Main R Script})"
 
@@ -167,30 +168,9 @@ table(ann$ENSEMBL==rownames(fit))
 fit$genes <- ann
 topTable(fit,coef=3,sort.by="p")
 
-# Alternative but didn't work:
 
-ls("package:org.Hs.eg.db")
-
-j <- toTable(org.Hs.egENSEMBL)
-head(j)
-
-symbol <- toTable(org.Hs.egSYMBOL)
-genename <- toTable(org.Hs.egGENENAME)
-
-ann1 <- merge(j,symbol,by="gene_id")
-head(ann1)
-
-ann2 <- merge(ann1,genename,by="gene_id")
-head(ann2)
-
-m <- match(rownames(fit),ann2$ensembl_id)
-table(is.na(m)) 
-
-ann3 <- ann2[m[!is.na(m)],]
-head(ann3)
-head(fit$genes)
-
-topTable(fit,coef=3,sort.by="p")
+tmp = topTable(fit,coef="Tumour/Normal", sort.by="p", number=30)
+cat(paste(tmp$SYMBOL, collapse = '\n'))
 
 # Checking expression of tetraspanin 6
 
@@ -203,7 +183,7 @@ fitSorted = fit
 fitSorted$p.value = fit$p.value[out$ix, ]
 fitSorted$genes = fit$genes[out$ix, ]
 
-# PLOTS:
+# PLOTS after testing for DE
 
 par(mfrow=c(1,2))
 
@@ -211,7 +191,16 @@ plotMD(fit,coef=3,status=results[,"Tumour/Normal"])
 
 volcanoplot(fit,coef=3,highlight=100,names=fit$genes$SYMBOL)
 
+tmp = topTable(fit,coef="Tumour/Normal", sort.by="p", number=30)
+cat(paste(tmp$SYMBOL, collapse = '\n'))
 
+tmp$SYMBOL
 
+# LONG LIST OF DE GENES : Gene set testing to aims to understand which pathways/gene networks the differentially expressed genes are implicated in
+
+# Gene set testing with Goana
+
+go <- goana(tmp$SYMBOL)
+topGO(go, n=10)
 
 vennDiagram # ***** need to figure out how to create this- good figure
