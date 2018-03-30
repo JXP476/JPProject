@@ -1,3 +1,5 @@
+# Initial setup and loading of required packages in R:
+
 install.packages("limma")
 source("https://bioconductor.org/biocLite.R")
 biocLite("limma")
@@ -12,18 +14,15 @@ install.packages("RColorBrewer")
 library(RColorBrewer)
 source("http://bioconductor.org/biocLite.R")
 biocLite("GO.db")
-#load library
 library(GO.db)
 
-
 "load({Main R Script})"
-
 rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCounts))
 rownames(geneExpressionCPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCPM))
 rownames(geneExpressionTPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionTPM))
 
 
-# FILTERING OUT LOWLY EXPRESSED GENES
+# 1) Filtering of lowly expressed genes
   
 counts <- geneExpressionCounts
 targets <- patientData
@@ -36,33 +35,49 @@ thresh <- mycpm > 0.5
 head(thresh)
 table(rowSums(thresh))
 
-keep <- rowSums(thresh) >= 7
+keep <- rowSums(thresh) >= 2
 table(keep)
 counts.keep <- geneExpressionCPM[keep,]
 dim(counts.keep)
 
-# Normalisation for composition bias
+# 2) TMM Normalisation
 
 y <- DGEList(counts.keep)
 y <- calcNormFactors(y)
-y
 y$samples
-dim(y)
+y
 
+# P5N2 - Before and after TMM Normalisation
+par(mfrow=c(1,2))
+plotMD(logcounts,column=13)
+abline(h=0,col="red")
 
-# Library sizes and distribution plots
+plotMD(y,column = 13)
+abline(h=0,col="red")
+
+# Effective library sizes and distribution plots
 
 y$samples$lib.size
 
 barplot(y$samples$lib.size,names=colnames(y),las=2)
-title("Barplot of library sizes")
+title("Barplot of library sizes (Normalised)")
+
+barplot(patientData$total_counts,names=colnames(y),las=2)
+title("Barplot of library sizes (Unnormalised)")
 
 # logcpm
 
 logcpm <- cpm(y$counts,log=TRUE)
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
 abline(h=median(logcpm),col="blue")
-title("Boxplots of logCPMs (normalised)")
+title("Boxplots of logCPMs (Normalised)")
+
+# Dr Yau- please could you let me know if this following 77-80 is correct for an unnormalised boxplot?
+logcpm <- cpm(counts,log=TRUE)
+boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2)
+abline(h=median(logcpm),col="blue")
+title("Boxplots of logCPMs (Unnormalised)")
+
 
 # Multidimensional scaling plots
 
@@ -70,7 +85,6 @@ plotMDS(y)
 col.cell <- c("purple","purple", "purple","purple","purple","purple","orange","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","orange","orange")
 data.frame(patientData$Tissue,col.cell)
 plotMDS(y,col=col.cell)
-legend("topleft",fill=c("purple","orange"),legend=levels(patientData$Tissue))
 title("Cell type")
 
 # Hierarchical clustering with heatmap.2
@@ -87,39 +101,11 @@ morecols <- colorRampPalette(mypalette)
 col.cell <- c("purple","purple", "purple","purple","purple","purple","orange","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","purple","purple","orange","purple","purple","orange","orange")
 data.frame(patientData$Tissue,col.cell)
 
-
-# Plot the heatmap
 heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 most variable genes across samples",ColSideColors=col.cell,scale="row")
-
-
-# THESE SHOW biased and unbiased MD plots side by side for the same sample to see the before and after TMM normalisation effect.
-# P4T7
-par(mfrow=c(1,2))
-plotMD(logcounts,column=2)
-abline(h=0,col="grey")
-plotMD(y,column = 2)
-abline(h=0,col="grey")
-
-# P3T3
-par(mfrow=c(1,2))
-plotMD(logcounts,column=4)
-abline(h=0,col="grey")
-plotMD(y,column = 2)
-abline(h=0,col="grey")
-
-# P4N1
-par(mfrow=c(1,2))
-plotMD(logcounts,column=7)
-abline(h=0,col="grey")
-plotMD(y,column = 2)
-abline(h=0,col="grey")
 
 # Differential expression
 
-# include the Patient + tissue as variables
-# You are testing for differences between normal and tumour tissues whilst accounting for any systematic inter-patient differences
-
-# SET UP DESIGN MATRIX
+# Set up design matrix
 design <- model.matrix(~targets$Patient + targets$Tissue)
 design
 colnames(design) <- c("Intercept", "Patient","Tumour/Normal")
@@ -127,61 +113,26 @@ colnames(design) <- c("Intercept", "Patient","Tumour/Normal")
 # Voom transform the data
 par(mfrow=c(1,1))
 v <- voom(y,design,plot=TRUE)
-par(mfrow=c(1,2))
-boxplot(logcounts)
-abline(h=median(logcounts),col=4)
-boxplot(v$E)
-abline(h=median(v$E),col=4)
-
+v
 
 # Test for differential expression
 fit <- lmFit(v,design)
 fit <- eBayes(fit)
 results <- decideTests(fit)
 summary(results)
-
 topTable(fit,coef=3,sort.by="p")
 
-# Adding annotation and saving the results - Add annotation from org.hs.eg.db (human samples)
+# Adding annotation and saving the results
 
 columns(org.Hs.eg.db)
 keytypes(org.Hs.eg.db)
 
-
-# At the moment the row names are a concatenation of its HUGO Gene Symbol and Ensembl ID.
-# THIS BIT OF CODE FOLLOWING TURNS ROW NAMES TO JUST Ensembl IDs
-# This will replace the row names of the geneExpressionXXX matrix by the ensembl ID only:
-
-rownames(geneExpressionCounts) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCounts))
-rownames(geneExpressionCPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionCPM))
-rownames(geneExpressionTPM) = gsub(".*_(.*)", "\\1", row.names(geneExpressionTPM))
-
-# This code then matches on the new row names:
-# You can then filter based on Ensembl Gene IDs:
-
 ann = select(org.Hs.eg.db, keys = rownames(fit),columns=c("ENSEMBL", "SYMBOL","GENENAME"),keytype="ENSEMBL")
-
-head(ann)
-ann
-
-table(ann$ENSEMBL==rownames(fit))
 fit$genes <- ann
-topTable(fit,coef=3,sort.by="p")
-
 
 tmp = topTable(fit,coef="Tumour/Normal", sort.by="p", number=30)
 cat(paste(tmp$SYMBOL, collapse = '\n'))
 
-# Checking expression of tetraspanin 6
-
-ps <- grep("tetraspanin 6",fit$genes$GENENAME)
-topTable(fit[ps,],coef=3)
-
-out = sort(fit$p.value[, 3], decreasing=FALSE, index.return=TRUE)
-
-fitSorted = fit
-fitSorted$p.value = fit$p.value[out$ix, ]
-fitSorted$genes = fit$genes[out$ix, ]
 
 # PLOTS after testing for DE
 
@@ -196,11 +147,7 @@ cat(paste(tmp$SYMBOL, collapse = '\n'))
 
 tmp$SYMBOL
 
-# LONG LIST OF DE GENES : Gene set testing to aims to understand which pathways/gene networks the differentially expressed genes are implicated in
-
 # Gene set testing with Goana
 
 go <- goana(tmp$SYMBOL)
-topGO(go, n=10)
-
-vennDiagram # ***** need to figure out how to create this- good figure
+topGO(go, n=15)
