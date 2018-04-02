@@ -119,8 +119,9 @@ v
 fit <- lmFit(v,design)
 fit <- eBayes(fit)
 results <- decideTests(fit)
+results
 summary(results)
-topTable(fit,coef=3,sort.by="p")
+topTable(fit,coef=3,sort.by="p") # **** Does this need to be here?
 
 # Adding annotation and saving the results
 
@@ -133,7 +134,6 @@ fit$genes <- ann
 tmp = topTable(fit,coef="Tumour/Normal", sort.by="p", number=30)
 cat(paste(tmp$SYMBOL, collapse = '\n'))
 
-
 # PLOTS after testing for DE
 
 par(mfrow=c(1,2))
@@ -144,10 +144,17 @@ volcanoplot(fit,coef=3,highlight=100,names=fit$genes$SYMBOL)
 
 tmp = topTable(fit,coef="Tumour/Normal", sort.by="p", number=30)
 cat(paste(tmp$SYMBOL, collapse = '\n'))
-
 tmp$SYMBOL
 
 # Gene set testing with Goana
 
 go <- goana(tmp$SYMBOL)
 topGO(go, n=15)
+head(tmp)
+
+keg <- kegga(tmp$SYMBOL, species="Hs")
+
+
+topKEGG(keg, n=15, truncate=34)
+
+
